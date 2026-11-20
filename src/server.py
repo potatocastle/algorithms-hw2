@@ -57,26 +57,6 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
         )
         self._send_html(status, body)
 
-    def _request_origin(self) -> str:
-        host = self.headers.get("Host", "")
-        if not host or any(
-            character.isspace() or character in "/\\?#@"
-            for character in host
-        ):
-            address = self._app_server().server_address
-            fallback_host = address[0]
-            if fallback_host in ("", "0.0.0.0"):
-                fallback_host = "localhost"
-            if ":" in fallback_host and not fallback_host.startswith("["):
-                fallback_host = f"[{fallback_host}]"
-            host = f"{fallback_host}:{address[1]}"
-
-        scheme = self.headers.get("X-Forwarded-Proto", "http")
-        scheme = scheme.split(",", 1)[0].strip().lower()
-        if scheme not in ("http", "https"):
-            scheme = "http"
-        return f"{scheme}://{host}"
-
     def _home_page(self, strategy: str) -> str:
         chaining_selected = " selected" if strategy == "chaining" else ""
         linear_selected = (
@@ -108,7 +88,6 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
         if strategy == "linear_probing":
             return self._linear_probing_table_page(table)
 
-        origin = escape(self._request_origin(), quote=True)
         buckets = []
 
         for bucket_index, entries in table.iter_buckets():
@@ -117,7 +96,7 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
                 if not isinstance(value, str):
                     raise RuntimeError("URL table values must be short codes")
                 code = value
-                short_link = f"{origin}/{escape(code, quote=True)}"
+                short_link = f"/{escape(code, quote=True)}"
                 steps = table.hash_steps(url)
                 step_items = []
                 for step_number, (character, before, code_point, after) in enumerate(
@@ -177,7 +156,6 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
     def _linear_probing_table_page(
         self, table: HashTable | LinearProbingHashTable
     ) -> str:
-        origin = escape(self._request_origin(), quote=True)
         slots = []
         for slot_index, entries in table.iter_buckets():
             if not entries:
@@ -192,7 +170,7 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
                 raise RuntimeError("URL table values must be short codes")
             code = value
             short_link = (
-                f"{origin}/{escape(code, quote=True)}"
+                f"/{escape(code, quote=True)}"
                 "?strategy=linear_probing"
             )
             steps = table.hash_steps(url)
@@ -357,7 +335,7 @@ class ShortenerRequestHandler(BaseHTTPRequestHandler):
             return
 
         short_link = (
-            f"{self._request_origin()}/{code}"
+            f"/{escape(code, quote=True)}"
             f"{self._strategy_query(strategy)}"
         )
         escaped_link = escape(short_link, quote=True)
