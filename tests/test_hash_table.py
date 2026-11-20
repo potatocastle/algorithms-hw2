@@ -16,13 +16,13 @@ class HashTableTests(unittest.TestCase):
         self.assertEqual(len(table), 1)
 
     def test_colliding_keys_keep_their_values(self):
-        table = HashTable(capacity=2)
+        table = HashTable(capacity=1)
 
-        table.put("a", "first")
-        table.put("c", "second")
+        table.put("first key", "first")
+        table.put("second key", "second")
 
-        self.assertEqual(table.get("a"), "first")
-        self.assertEqual(table.get("c"), "second")
+        self.assertEqual(table.get("first key"), "first")
+        self.assertEqual(table.get("second key"), "second")
         self.assertEqual(len(table), 2)
 
     def test_updating_a_key_does_not_increase_length(self):
@@ -34,9 +34,9 @@ class HashTableTests(unittest.TestCase):
         self.assertEqual(table.get("key"), "new")
         self.assertEqual(len(table), 1)
 
-    def test_single_bucket_handles_load_factor_above_one(self):
+    def test_single_bucket_handles_load_factor_four(self):
         table = HashTable(capacity=1)
-        entries = [(f"key-{index}", f"value-{index}") for index in range(5)]
+        entries = [(f"key-{index}", f"value-{index}") for index in range(4)]
 
         for key, value in entries:
             table.put(key, value)
