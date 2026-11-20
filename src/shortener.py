@@ -12,6 +12,11 @@ class Shortener:
         self._code_to_url = HashTable()
         self._next_id = 0
 
+    @property
+    def url_table(self) -> HashTable:
+        """Return the URL-keyed table for read-only inspection."""
+        return self._url_to_code
+
     @staticmethod
     def _validate_url(url: str) -> None:
         if not isinstance(url, str):
