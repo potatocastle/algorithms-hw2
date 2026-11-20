@@ -35,16 +35,30 @@ class HashTableTests(unittest.TestCase):
         self.assertEqual(len(table), 1)
 
     def test_single_bucket_handles_load_factor_four(self):
-        table = HashTable(capacity=1)
+        table = HashTable(capacity=1, max_load=None)
         entries = [(f"key-{index}", f"value-{index}") for index in range(4)]
 
         for key, value in entries:
             table.put(key, value)
 
+        self.assertEqual(table.capacity, 1)
         self.assertEqual(len(table), len(entries))
         for key, value in entries:
             with self.subTest(key=key):
                 self.assertEqual(table.get(key), value)
+
+    def test_lookup_reports_nodes_compared(self):
+        table = HashTable(capacity=1, max_load=None)
+        table.put("first", "first value")
+        table.put("second", "second value")
+
+        self.assertEqual(
+            table.get_with_comparisons("first"), ("first value", 1)
+        )
+        self.assertEqual(
+            table.get_with_comparisons("second"), ("second value", 2)
+        )
+        self.assertEqual(table.get_with_comparisons("missing"), (None, 2))
 
 
 if __name__ == "__main__":
