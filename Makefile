@@ -18,10 +18,10 @@ test:
 	@python3 -m unittest discover -s tests -v
 
 serve:
-	@python3 src/server.py --port $(PORT)
+	@python3 -m src.server --port $(PORT)
 
 experiment:
-	@python3 experiments/probe_experiment.py
+	@python3 -m experiments.probe_experiment
 
 clean:
 	rm -rf src/__pycache__ tests/__pycache__ experiments/__pycache__
