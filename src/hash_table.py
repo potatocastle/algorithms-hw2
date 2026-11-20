@@ -2,11 +2,15 @@
 
 
 class HashTable:
-    def __init__(self, capacity: int = 8) -> None:
+    def __init__(
+        self, capacity: int = 8, *, max_load: float | None = None
+    ) -> None:
         if not isinstance(capacity, int) or isinstance(capacity, bool):
             raise TypeError("capacity must be an integer")
         if capacity <= 0:
             raise ValueError("capacity must be positive")
+        if max_load is not None:
+            raise ValueError("fixed-capacity tables require max_load=None")
 
         self.capacity = capacity
         self._buckets: list[list[tuple[str, object]]] = [
@@ -38,11 +42,18 @@ class HashTable:
         self._size += 1
 
     def get(self, key: str) -> object | None:
+        value, _ = self.get_with_comparisons(key)
+        return value
+
+    def get_with_comparisons(self, key: str) -> tuple[object | None, int]:
+        """Return the value and number of chain nodes compared during lookup."""
         bucket = self._buckets[self._bucket_index(key)]
+        comparisons = 0
         for stored_key, value in bucket:
+            comparisons += 1
             if stored_key == key:
-                return value
-        return None
+                return value, comparisons
+        return None, comparisons
 
     def __len__(self) -> int:
         return self._size
