@@ -3,17 +3,28 @@
 from urllib.parse import urlsplit
 
 from src.base62 import decode, encode
-from src.hash_table import HashTable
+from src.hash_table import HashTable, LinearProbingHashTable
 
 
 class Shortener:
-    def __init__(self) -> None:
-        self._url_to_code = HashTable()
-        self._code_to_url = HashTable()
+    def __init__(self, strategy: str = "chaining", capacity: int = 8) -> None:
+        if strategy not in ("chaining", "linear_probing"):
+            raise ValueError("strategy must be 'chaining' or 'linear_probing'")
+
+        table_type = (
+            HashTable if strategy == "chaining" else LinearProbingHashTable
+        )
+        self.strategy = strategy
+        self._url_to_code: HashTable | LinearProbingHashTable = table_type(
+            capacity=capacity, max_load=None
+        )
+        self._code_to_url: HashTable | LinearProbingHashTable = table_type(
+            capacity=capacity, max_load=None
+        )
         self._next_id = 0
 
     @property
-    def url_table(self) -> HashTable:
+    def url_table(self) -> HashTable | LinearProbingHashTable:
         """Return the URL-keyed table for read-only inspection."""
         return self._url_to_code
 
