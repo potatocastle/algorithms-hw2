@@ -34,15 +34,18 @@ class ServerTests(unittest.TestCase):
         connection.close()
         return status, location, response_body
 
-    def shorten(self, url, strategy="chaining"):
+    def shorten(self, url, strategy="chaining", host=None):
         body = urlencode(
             [("url", url), ("strategy", strategy)]
         ).encode("utf-8")
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        if host is not None:
+            headers["Host"] = host
         return self.request(
             "POST",
             "/shorten",
             body=body,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            headers=headers,
         )
 
     def test_homepage_contains_url_form(self):
@@ -57,10 +60,13 @@ class ServerTests(unittest.TestCase):
     def test_shortening_shows_link_that_redirects(self):
         original_url = "https://example.com/path"
 
-        status, _, body = self.shorten(original_url)
+        status, _, body = self.shorten(
+            original_url, host="localhost:8000"
+        )
 
         self.assertEqual(status, 200)
-        self.assertIn(f"http://127.0.0.1:{self.port}/0", body)
+        self.assertIn('<a href="/0">/0</a>', body)
+        self.assertNotIn("localhost", body)
 
         status, location, _ = self.request("GET", "/0")
 
@@ -100,7 +106,9 @@ class ServerTests(unittest.TestCase):
             "https://example.com/c",
         )
         for url in urls:
-            status, _, _ = self.shorten(url, strategy="linear_probing")
+            status, _, _ = self.shorten(
+                url, strategy="linear_probing", host="localhost:8000"
+            )
             self.assertEqual(status, 200)
 
         status, _, full_table_body = self.shorten(
@@ -110,10 +118,14 @@ class ServerTests(unittest.TestCase):
         self.assertIn("hash table is full", full_table_body)
 
         status, _, result_body = self.shorten(
-            urls[0], strategy="linear_probing"
+            urls[0], strategy="linear_probing", host="localhost:8000"
         )
         self.assertEqual(status, 200)
-        self.assertIn("?strategy=linear_probing", result_body)
+        self.assertIn(
+            '<a href="/0?strategy=linear_probing">/0?strategy=linear_probing</a>',
+            result_body,
+        )
+        self.assertNotIn("localhost", result_body)
 
         status, location, _ = self.request(
             "GET", "/0?strategy=linear_probing"
@@ -130,6 +142,8 @@ class ServerTests(unittest.TestCase):
         self.assertIn("방문한 칸 수", body)
         self.assertIn("Horner", body)
         self.assertIn("mod 3", body)
+        self.assertIn('href="/0?strategy=linear_probing"', body)
+        self.assertNotIn("localhost", body)
         for url in urls:
             with self.subTest(url=url):
                 self.assertIn(url, body)
